@@ -52,7 +52,26 @@ async function startBot() {
     client.handleCommands();
     client.handleComponents();
 
-    client.login(process.env.DISCORD_TOKEN);
+    try {
+        await client.login(process.env.DISCORD_TOKEN);
+    } catch (error) {
+        if (error.message && error.message.includes('disallowed intents')) {
+            console.error('\n[CRASH] Missing Privileged Intents!');
+            console.error('Details: Your bot is trying to use required Privileged Intents, but they are disabled in the Developer Portal.');
+            console.log('\n--- HOW TO FIX ---');
+            console.log('1. Go to https://discord.com/developers/applications');
+            console.log('2. Select your bot and click on the "Bot" tab on the left side.');
+            console.log('3. Scroll down to the "Privileged Gateway Intents" section.');
+            console.log('4. Turn ON "Server Members Intent" and "Message Content Intent".');
+            console.log('5. Save your changes and start the bot again.');
+            console.log('------------------\n');
+        } else {
+            console.error('\n[CRASH] Failed to start the bot:');
+            console.error(error);
+        }
+        console.log('The process will exit in 60 seconds so you can read this error...');
+        setTimeout(() => process.exit(1), 60000);
+    }
 }
 
 process.on('uncaughtException', (err) => {
