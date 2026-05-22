@@ -18,6 +18,7 @@ async function startBot() {
     require('dotenv').config();
     const file = fs.readFileSync('config.yml', 'utf8');
     const config = yaml.parse(file);
+    const chalk = require('chalk');
 
     let embedsConfig = {};
     if (fs.existsSync('embeds.yml')) {
@@ -55,36 +56,39 @@ async function startBot() {
     try {
         await client.login(process.env.DISCORD_TOKEN);
     } catch (error) {
+        const chalk = require('chalk');
         if (error.message && error.message.includes('disallowed intents')) {
-            console.error('\n[CRASH] Missing Privileged Intents!');
-            console.error('Details: Your bot is trying to use required Privileged Intents, but they are disabled in the Developer Portal.');
-            console.log('\n--- HOW TO FIX ---');
-            console.log('1. Go to https://discord.com/developers/applications');
-            console.log('2. Select your bot and click on the "Bot" tab on the left side.');
-            console.log('3. Scroll down to the "Privileged Gateway Intents" section.');
-            console.log('4. Turn ON "Server Members Intent" and "Message Content Intent".');
-            console.log('5. Save your changes and start the bot again.');
-            console.log('------------------\n');
+            console.error('\n' + chalk.bgRed.white.bold(' ❌ FATAL ERROR: MISSING PRIVILEGED INTENTS ') + '\n');
+            console.error(chalk.red('Your bot is trying to use Privileged Intents, but they are disabled in the Developer Portal.\n'));
+            console.log(chalk.cyan.bold('╭────────────────── HOW TO FIX ──────────────────╮'));
+            console.log(chalk.cyan('│ ') + chalk.white('1. Go to ') + chalk.underline.blue('https://discord.com/developers/applications') + ' '.repeat(5) + chalk.cyan('│'));
+            console.log(chalk.cyan('│ ') + chalk.white('2. Select your bot and click on the "Bot" tab.   ') + chalk.cyan('│'));
+            console.log(chalk.cyan('│ ') + chalk.white('3. Scroll down to "Privileged Gateway Intents".  ') + chalk.cyan('│'));
+            console.log(chalk.cyan('│ ') + chalk.white('4. Turn ON "Server Members" & "Message Content". ') + chalk.cyan('│'));
+            console.log(chalk.cyan('│ ') + chalk.white('5. Save your changes and start the bot again.    ') + chalk.cyan('│'));
+            console.log(chalk.cyan.bold('╰────────────────────────────────────────────────╯\n'));
         } else {
-            console.error('\n[CRASH] Failed to start the bot:');
-            console.error(error);
+            console.error('\n' + chalk.bgRed.white.bold(' ❌ FATAL ERROR: FAILED TO START ') + '\n');
+            console.error(chalk.red(error.stack || error));
         }
-        console.log('The process will exit in 60 seconds so you can read this error...');
+        console.log(chalk.yellow.italic('The process will exit in 60 seconds so you can read this error...'));
         setTimeout(() => process.exit(1), 60000);
     }
 }
 
 process.on('uncaughtException', (err) => {
-    console.error('\n[CRASH] An unexpected error occurred:');
-    console.error(err);
-    console.log('\nThe process will exit in 60 seconds so you can read this error...');
+    const chalk = require('chalk');
+    console.error('\n' + chalk.bgRed.white.bold(' ❌ UNEXPECTED CRASH ') + '\n');
+    console.error(chalk.red(err.stack || err));
+    console.log('\n' + chalk.yellow.italic('The process will exit in 60 seconds so you can read this error...'));
     setTimeout(() => process.exit(1), 60000);
 });
 
 process.on('unhandledRejection', (err) => {
-    console.error('\n[CRASH] An unhandled promise rejection occurred:');
-    console.error(err);
-    console.log('\nThe process will exit in 60 seconds so you can read this error...');
+    const chalk = require('chalk');
+    console.error('\n' + chalk.bgRed.white.bold(' ❌ UNHANDLED PROMISE REJECTION ') + '\n');
+    console.error(chalk.red(err.stack || err));
+    console.log('\n' + chalk.yellow.italic('The process will exit in 60 seconds so you can read this error...'));
     setTimeout(() => process.exit(1), 60000);
 });
 
