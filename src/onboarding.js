@@ -3,7 +3,7 @@
  * @distributor CrestCloud (https://cloud.crestyy.xyz)
  * @license See LICENSE file for details. Redistribution is strictly prohibited.
  */
-const inquirer = require('inquirer');
+const readline = require('readline');
 const chalk = require('chalk');
 const fs = require('fs');
 const yaml = require('yaml');
@@ -20,72 +20,79 @@ function displayCredits() {
     console.log(chalk.gray('================================================================\n'));
 }
 
+function askQuestion(rl, question, defaultValue = '') {
+    return new Promise(resolve => {
+        const defaultText = defaultValue !== '' ? chalk.gray(` [default: ${defaultValue}]`) : '';
+        rl.question(chalk.yellow('? ') + question + defaultText + '\n> ', (answer) => {
+            resolve(answer.trim() || defaultValue);
+        });
+    });
+}
+
 async function runOnboarding() {
     displayCredits();
     
     console.log(chalk.white('Welcome to the advanced first-time setup wizard!'));
     console.log(chalk.gray('We will now configure your premium ticket system.\n'));
 
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
     let isValid = false;
-    let answers;
+    let answers = {};
 
     while (!isValid) {
-        answers = await inquirer.prompt([
-            {
-                type: 'input',
-                name: 'botToken',
-                message: chalk.yellow('? ') + 'Enter your Discord Bot Token:',
-                validate: input => input ? true : 'Token cannot be empty!'
-            },
-            {
-                type: 'input',
-                name: 'botName',
-                message: chalk.yellow('? ') + 'Enter the name of your Bot (used for branding):',
-                default: 'Premium Support Bot'
-            },
-            {
-                type: 'input',
-                name: 'clientId',
-                message: chalk.yellow('? ') + 'Enter your Bot Client ID:',
-                validate: input => input ? true : 'Client ID cannot be empty!'
-            },
-            {
-                type: 'input',
-                name: 'guildId',
-                message: chalk.yellow('? ') + 'Enter your Server (Guild) ID:',
-                validate: input => input ? true : 'Server ID cannot be empty!'
-            },
-            {
-                type: 'input',
-                name: 'panelChannel',
-                message: chalk.yellow('? ') + 'Enter the Channel ID where the main Ticket Panel should be sent:',
-                validate: input => input ? true : 'Channel ID cannot be empty!'
-            },
-            {
-                type: 'input',
-                name: 'ticketCategory',
-                message: chalk.yellow('? ') + 'Enter the Category ID where new tickets should be created:',
-                validate: input => input ? true : 'Category ID cannot be empty!'
-            },
-            {
-                type: 'input',
-                name: 'supportRole',
-                message: chalk.yellow('? ') + 'Enter the Support Role ID (Staff Role):',
-                validate: input => input ? true : 'Role ID cannot be empty!'
-            },
-            {
-                type: 'input',
-                name: 'logChannel',
-                message: chalk.yellow('? ') + 'Enter the Channel ID for transcripts and logs (optional):'
-            },
-            {
-                type: 'confirm',
-                name: 'anyoneCanClose',
-                message: chalk.yellow('? ') + 'Allow ANY user to close their own tickets? (If No, only staff can)',
-                default: false
-            }
-        ]);
+        let botToken = '';
+        while (!botToken) {
+            botToken = await askQuestion(rl, 'Enter your Discord Bot Token:');
+            if (!botToken) console.log(chalk.red('Token cannot be empty!'));
+        }
 
+        const botName = await askQuestion(rl, 'Enter the name of your Bot (used for branding):', 'Premium Support Bot');
+
+        let clientId = '';
+        while (!clientId) {
+            clientId = await askQuestion(rl, 'Enter your Bot Client ID:');
+            if (!clientId) console.log(chalk.red('Client ID cannot be empty!'));
+        }
+
+        let guildId = '';
+        while (!guildId) {
+            guildId = await askQuestion(rl, 'Enter your Server (Guild) ID:');
+            if (!guildId) console.log(chalk.red('Server ID cannot be empty!'));
+        }
+
+        let panelChannel = '';
+        while (!panelChannel) {
+            panelChannel = await askQuestion(rl, 'Enter the Channel ID where the main Ticket Panel should be sent:');
+            if (!panelChannel) console.log(chalk.red('Channel ID cannot be empty!'));
+        }
+
+        let ticketCategory = '';
+        while (!ticketCategory) {
+            ticketCategory = await askQuestion(rl, 'Enter the Category ID where new tickets should be created:');
+            if (!ticketCategory) console.log(chalk.red('Category ID cannot be empty!'));
+        }
+
+        let supportRole = '';
+        while (!supportRole) {
+            supportRole = await askQuestion(rl, 'Enter the Support Role ID (Staff Role):');
+            if (!supportRole) console.log(chalk.red('Role ID cannot be empty!'));
+        }
+
+        const logChannel = await askQuestion(rl, 'Enter the Channel ID for transcripts and logs (optional):');
+        
+        let anyoneCanCloseStr = '';
+        while (anyoneCanCloseStr.toLowerCase() !== 'y' && anyoneCanCloseStr.toLowerCase() !== 'n') {
+            anyoneCanCloseStr = await askQuestion(rl, 'Allow ANY user to close their own tickets? (y/n)', 'n');
+        }
+        const anyoneCanClose = anyoneCanCloseStr.toLowerCase() === 'y';
+
+        answers = { botToken, botName, clientId, guildId, panelChannel, ticketCategory, supportRole, logChannel, anyoneCanClose };
+
+        console.log('\n');
         const spinner = ora('Validating credentials and verifying Discord permissions...').start();
 
         const tempClient = new Client({
@@ -104,20 +111,18 @@ async function runOnboarding() {
         try {
             const guild = await tempClient.guilds.fetch(answers.guildId);
             
-            // Check Bot Permissions in the server
             const me = await guild.members.fetch(tempClient.user.id);
             if (!me.permissions.has(PermissionFlagsBits.ManageChannels) || !me.permissions.has(PermissionFlagsBits.SendMessages)) {
                 spinner.fail(chalk.red.bold('VALIDATION FAILED: Missing Permissions.'));
                 console.log(chalk.red(`Details: The bot lacks 'Manage Channels' and/or 'Send Messages' permissions.`));
-                console.log(chalk.yellow('How to fix: Go to your Server Settings -> Roles, find the bot role, and grant it Administrator or Manage Channels/Send Messages permissions.\n'));
+                console.log(chalk.yellow('How to fix: Grant it Administrator or Manage Channels/Send Messages permissions.\n'));
                 tempClient.destroy();
                 continue;
             }
 
-            // Verify Panel Channel
             try {
-                const panelChannel = await guild.channels.fetch(answers.panelChannel);
-                if (!panelChannel || !panelChannel.isTextBased()) throw new Error();
+                const pChannel = await guild.channels.fetch(answers.panelChannel);
+                if (!pChannel || !pChannel.isTextBased()) throw new Error();
             } catch (e) {
                 spinner.fail(chalk.red.bold('VALIDATION FAILED: Invalid Panel Channel.'));
                 console.log(chalk.red(`Details: Could not find a text channel with ID ${answers.panelChannel}.`));
@@ -126,10 +131,9 @@ async function runOnboarding() {
                 continue;
             }
 
-            // Verify Category
             try {
                 const category = await guild.channels.fetch(answers.ticketCategory);
-                if (!category || category.type !== 4) throw new Error(); // 4 is Category type in v14
+                if (!category || category.type !== 4) throw new Error(); 
             } catch (e) {
                 spinner.fail(chalk.red.bold('VALIDATION FAILED: Invalid Category ID.'));
                 console.log(chalk.red(`Details: Could not find a category with ID ${answers.ticketCategory}.`));
@@ -138,7 +142,6 @@ async function runOnboarding() {
                 continue;
             }
 
-            // Verify Role
             try {
                 const role = await guild.roles.fetch(answers.supportRole);
                 if (!role) throw new Error();
@@ -163,13 +166,13 @@ async function runOnboarding() {
         }
     }
 
+    rl.close();
+
     const genSpinner = ora('Generating premium configuration files...').start();
 
-    // Create .env file
     const envContent = `DISCORD_TOKEN=${answers.botToken}\nCLIENT_ID=${answers.clientId}\nGUILD_ID=${answers.guildId}\n`;
     fs.writeFileSync('.env', envContent);
 
-    // Create config.yml
     const config = {
         bot_name: answers.botName,
         permissions: {
@@ -207,7 +210,6 @@ async function runOnboarding() {
 
     fs.writeFileSync('config.yml', yaml.stringify(config));
 
-    // Create embeds.yml
     const embedsConfig = {
         colors: {
             primary: '#2B2D31',
