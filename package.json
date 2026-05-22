@@ -1,0 +1,23 @@
+{
+  "name": "crest_ticket_egg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "discord-html-transcripts": "^3.2.0",
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2",
+    "figlet": "^1.11.0",
+    "inquirer": "^8.2.7",
+    "ora": "^5.4.1",
+    "yaml": "^2.9.0"
+  }
+}

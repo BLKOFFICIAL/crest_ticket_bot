@@ -1,0 +1,5 @@
+node_modules/
+.env
+config.yml
+embeds.yml
+.DS_Store
