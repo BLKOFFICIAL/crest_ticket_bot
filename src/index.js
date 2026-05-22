@@ -10,10 +10,13 @@ const yaml = require('yaml');
 
 async function startBot() {
     // Check for config and env
-    if (!fs.existsSync('.env') || !fs.existsSync('config.yml')) {
+    if (!fs.existsSync('.env') || !fs.existsSync('config.yml') || !fs.existsSync('embeds.yml')) {
         const { runOnboarding } = require('./onboarding');
         await runOnboarding();
     }
+
+    const { checkAndPatch } = require('./update_wizard');
+    await checkAndPatch();
 
     require('dotenv').config();
     const file = fs.readFileSync('config.yml', 'utf8');
