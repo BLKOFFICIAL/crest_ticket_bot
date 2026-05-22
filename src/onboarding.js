@@ -200,9 +200,9 @@ async function runOnboarding() {
                 title: "🎫 Premium Support Center",
                 description: `Welcome to the ${answers.botName} Support Center. Please select a category below to open a ticket.`,
                 categories: [
-                    { label: "General Support", description: "Ask a general question", value: "support_general", emoji: "📩" },
-                    { label: "Bug Report", description: "Report a bug", value: "support_bug", emoji: "🐛" },
-                    { label: "Billing", description: "Billing and payment issues", value: "support_billing", emoji: "💳" }
+                    { label: "General Support", description: "Ask a general question", value: "support_general", emoji: "📩", require_reason: true },
+                    { label: "Bug Report", description: "Report a bug", value: "support_bug", emoji: "🐛", require_reason: true },
+                    { label: "Billing", description: "Billing and payment issues", value: "support_billing", emoji: "💳", require_reason: false }
                 ]
             }
         ]

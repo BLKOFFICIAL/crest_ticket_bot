@@ -3,8 +3,9 @@
  * @distributor CrestCloud (https://cloud.crestyy.xyz)
  * @license See LICENSE file for details. Redistribution is strictly prohibited.
  */
-const discordTranscripts = require('discord-html-transcripts');
-const { EmbedBuilder } = require('discord.js');
+const { MessageFlags } = require('discord.js');
+const { createErrorUI, createInfoUI } = require('../../utils/ui');
+const { createCustomTranscript } = require('../../utils/transcript');
 
 module.exports = {
     data: {
@@ -17,22 +18,18 @@ module.exports = {
             const supportRoles = config.permissions.support_roles || [];
             const hasRole = supportRoles.some(roleId => interaction.member.roles.cache.has(roleId));
             if (!hasRole) {
-                return interaction.reply({ content: 'You do not have permission to close this ticket.', ephemeral: true });
+                const errorUI = createErrorUI(client, 'Permission Denied', 'You do not have permission to close this ticket.');
+                return interaction.reply({ flags: MessageFlags.IsComponentsV2, components: [errorUI], ephemeral: true });
             }
         }
 
-        await interaction.reply({ content: 'Closing ticket and generating transcript...', ephemeral: false });
+        const infoUI = createInfoUI(client, 'Closing Ticket', 'Generating premium transcript and archiving ticket...');
+        await interaction.reply({ flags: MessageFlags.IsComponentsV2, components: [infoUI], ephemeral: false });
 
         const channel = interaction.channel;
 
         try {
-            const attachment = await discordTranscripts.createTranscript(channel, {
-                limit: -1,
-                returnType: 'attachment',
-                filename: `${channel.name}-transcript.html`,
-                saveImages: true,
-                poweredBy: false
-            });
+            const attachment = await createCustomTranscript(channel);
 
             if (config.channels.log_channel) {
                 try {
@@ -59,8 +56,8 @@ module.exports = {
             }
         } catch (error) {
             console.error('Error closing ticket:', error);
-            await interaction.followUp({ content: 'Failed to close ticket properly.', ephemeral: true });
+            const errorUI = createErrorUI(client, 'Error', 'Failed to close ticket properly.');
+            await interaction.followUp({ flags: MessageFlags.IsComponentsV2, components: [errorUI], ephemeral: true });
         }
     }
 };
-

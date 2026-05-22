@@ -3,8 +3,8 @@
  * @distributor CrestCloud (https://cloud.crestyy.xyz)
  * @license See LICENSE file for details. Redistribution is strictly prohibited.
  */
-const { ActivityType, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
-const { createTicketPanelEmbed } = require('../utils/embeds');
+const { ActivityType, ActionRowBuilder, StringSelectMenuBuilder, MessageFlags } = require('discord.js');
+const { createTicketPanelUI } = require('../utils/ui');
 
 module.exports = {
     name: 'ready',
@@ -38,9 +38,7 @@ module.exports = {
                     const existingPanel = messages.find(m => m.author.id === client.user.id && m.components.length > 0);
 
                     if (!existingPanel) {
-                        const embed = createTicketPanelEmbed(client)
-                            .setTitle(panel.title)
-                            .setDescription(panel.description);
+                        const container = createTicketPanelUI(client, panel.title, panel.description);
                         
                         const options = panel.categories.map(cat => ({
                             label: cat.label,
@@ -57,7 +55,10 @@ module.exports = {
                                     .addOptions(options)
                             );
 
-                        await channel.send({ embeds: [embed], components: [selectMenu] });
+                        await channel.send({ 
+                            flags: MessageFlags.IsComponentsV2,
+                            components: [container, selectMenu] 
+                        });
                         console.log(`Deployed panel to channel ${panel.channel_id}`);
                     }
                 } catch (error) {

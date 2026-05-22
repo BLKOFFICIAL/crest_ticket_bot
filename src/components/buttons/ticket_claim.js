@@ -3,8 +3,8 @@
  * @distributor CrestCloud (https://cloud.crestyy.xyz)
  * @license See LICENSE file for details. Redistribution is strictly prohibited.
  */
-const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const { COLORS } = require('../../utils/embeds');
+const { MessageFlags } = require('discord.js');
+const { createSuccessUI, createErrorUI } = require('../../utils/ui');
 
 module.exports = {
     data: {
@@ -17,12 +17,11 @@ module.exports = {
         const hasRole = supportRoles.some(roleId => interaction.member.roles.cache.has(roleId));
 
         if (!hasRole && supportRoles.length > 0) {
-            return interaction.reply({ content: 'You do not have permission to claim tickets.', ephemeral: true });
+            const errorUI = createErrorUI(client, 'Permission Denied', 'You do not have permission to claim tickets.');
+            return interaction.reply({ flags: MessageFlags.IsComponentsV2, components: [errorUI], ephemeral: true });
         }
 
-        const claimEmbed = new EmbedBuilder()
-            .setColor(COLORS.WARNING)
-            .setDescription(`This ticket has been claimed by <@${interaction.user.id}>. They will assist you shortly.`);
+        const claimUI = createSuccessUI(client, 'Ticket Claimed', `This ticket has been claimed by <@${interaction.user.id}>. They will assist you shortly.`);
 
         const message = interaction.message;
         const components = message.components;
@@ -40,7 +39,6 @@ module.exports = {
         });
 
         await message.edit({ components: newComponents });
-        await interaction.reply({ embeds: [claimEmbed] });
+        await interaction.reply({ flags: MessageFlags.IsComponentsV2, components: [claimUI] });
     }
 };
-

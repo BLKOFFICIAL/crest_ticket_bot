@@ -3,8 +3,8 @@
  * @distributor CrestCloud (https://cloud.crestyy.xyz)
  * @license See LICENSE file for details. Redistribution is strictly prohibited.
  */
-const { InteractionType } = require('discord.js');
-const { createErrorEmbed } = require('../utils/embeds');
+const { InteractionType, MessageFlags } = require('discord.js');
+const { createErrorUI } = require('../utils/ui');
 
 module.exports = {
     name: 'interactionCreate',
@@ -30,11 +30,11 @@ module.exports = {
             }
         } catch (error) {
             console.error(error);
-            const errorEmbed = createErrorEmbed(client, 'An Error Occurred', 'There was an error while executing this interaction.');
+            const errorUI = createErrorUI(client, 'An Error Occurred', 'There was an error while executing this interaction.');
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
+                await interaction.followUp({ flags: MessageFlags.IsComponentsV2, components: [errorUI], ephemeral: true });
             } else {
-                await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+                await interaction.reply({ flags: MessageFlags.IsComponentsV2, components: [errorUI], ephemeral: true });
             }
         }
     },
