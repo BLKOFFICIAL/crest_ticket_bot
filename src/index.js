@@ -55,5 +55,19 @@ async function startBot() {
     client.login(process.env.DISCORD_TOKEN);
 }
 
+process.on('uncaughtException', (err) => {
+    console.error('\n[CRASH] An unexpected error occurred:');
+    console.error(err);
+    console.log('\nThe process will exit in 60 seconds so you can read this error...');
+    setTimeout(() => process.exit(1), 60000);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('\n[CRASH] An unhandled promise rejection occurred:');
+    console.error(err);
+    console.log('\nThe process will exit in 60 seconds so you can read this error...');
+    setTimeout(() => process.exit(1), 60000);
+});
+
 startBot();
 

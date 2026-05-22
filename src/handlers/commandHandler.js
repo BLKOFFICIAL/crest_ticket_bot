@@ -8,12 +8,15 @@ const path = require('path');
 
 module.exports = (client) => {
     client.handleCommands = async () => {
-        const commandFolders = fs.readdirSync(path.join(__dirname, '../commands'));
+        const commandsPath = path.join(__dirname, '../commands');
+        if (!fs.existsSync(commandsPath)) return;
+        
+        const commandFolders = fs.readdirSync(commandsPath);
         const { REST, Routes } = require('discord.js');
         const commands = [];
 
         for (const folder of commandFolders) {
-            const commandFiles = fs.readdirSync(path.join(__dirname, `../commands/${folder}`)).filter(file => file.endsWith('.js'));
+            const commandFiles = fs.readdirSync(path.join(commandsPath, folder)).filter(file => file.endsWith('.js'));
             for (const file of commandFiles) {
                 const command = require(`../commands/${folder}/${file}`);
                 client.commands.set(command.data.name, command);
